@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>探店日记封面 · 手机版</title>
+<!-- html2canvas for PNG export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  /* ============================================
+     Reset & Base - Mobile first
+     ============================================ */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg-app: #ebe6dc;
+    --bg-panel: #fdfbf6;
+    --border-soft: #e0d9c8;
+    --text-main: #2a2622;
+    --text-muted: #8b857b;
+    --text-faint: #b5b0a5;
+    --accent: #d4836a;
+    --shadow-card: 0 4px 16px rgba(40, 30, 20, 0.08);
+  }
+
+  html, body {
+    /* iOS 中文手写体优先，退到可爱圆体，最后系统默认 */
+    font-family: "HanziPen SC", "Yuanti SC", "Wawati SC", "Baoli SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    background: var(--bg-app);
+    color: var(--text-main);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* 标题专用字体（店名） */
+  .font-hand {
+    font-family: "HanziPen SC", "Baoli SC", "Yuanti SC", "Wawati SC", "STXingkai", "STKaiti", "KaiTi", "PingFang SC", serif;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+  .font-cute {
+    font-family: "Yuanti SC", "Wawati SC", "Baoli SC", "PingFang SC", "Hiragino Sans GB", sans-serif;
+    font-weight: 500;
+  }
+  .font-body {
+    font-family: "Yuanti SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  }
+
+  /* ============================================
+     Layout - Mobile first
+     ============================================ */
+  .app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  /* Sticky header */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(253, 251, 246, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 14px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .header h1 {
+    font-size: 18px;
+    font-weight: 600;
+    font-family: "HanziPen SC", "Yuanti SC", "Baoli SC", "PingFang SC", sans-serif;
+    letter-spacing: 1px;
+  }
+  .header .export-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 2px 8px rgba(212, 131, 106, 0.3);
+  }
+  .header .export-btn:active { transform: scale(0.95); }
+  .header .export-btn:disabled { opacity: 0.5; }
+
+  /* Canvas preview area */
+  .stage {
+    padding: 20px 16px;
+    display: flex;
+    justify-content: center;
+    background: linear-gradient(180deg, #d8d2c4 0%, #ebe6dc 100%);
+    position: sticky;
+    top: 57px;
+    z-index: 50;
+  }
+  .cover {
+    width: 100%;
+    max-width: 320px;
+    aspect-ratio: 3 / 4;
+    background: #f5ede0;
+    box-shadow: 0 8px 24px rgba(40, 30, 20, 0.2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Controls area */
+  .controls {
+    padding: 0 16px 100px;
+    background: var(--bg-panel);
+  }
+
+  /* Collapsible sections */
+  .section {
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .section-header {
+    width: 100%;
+    padding: 16px 4px;
+    background: none;
+    border: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+  }
+  .section-header .title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-header .num {
+    background: var(--accent);
+    color: #fff;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .section-header .arrow {
+    color: var(--text-muted);
+    font-size: 18px;
+    transition: transform 0.2s;
+  }
+  .section.open .section-header .arrow { transform: rotate(90deg); }
+  .section-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+  .section.open .section-body {
+    max-height: 1000px;
+    padding-bottom: 16px;
+  }
+
+  /* Theme picker */
+  .theme-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .theme-card {
+    border: 2px solid var(--border-soft);
+    border-radius: 10px;
+    padding: 8px;
+    cursor: pointer;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    background: #fff;
+    transition: border-color 0.15s;
+    font-family: "Yuanti SC", "PingFang SC", sans-serif;
+  }
+  .theme-card.active { border-color: var(--accent); background: #fff5ed; }
+  .theme-card .swatch {
+    width: 100%;
+    aspect-ratio: 1.2;
+    border-radius: 6px;
+    margin-bottom: 6px;
+  }
+
+  /* Layout picker */
+  .layout-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+  .layout-card {
+    border: 2px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 6px;
+    cursor: pointer;
+    background: #fff;
+    transition: border-color 0.15s;
+  }
+  .layout-card.active { border-color: var(--accent); background: #fff5ed; }
+  .layout-card .layout-svg {
+    width: 100%;
+    aspect-ratio: 0.75;
+    background: #fafaf3;
+    border-radius: 4px;
+  }
+
+  /* Image upload */
+  .img-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .img-slot {
+    position: relative;
+    aspect-ratio: 1;
+    border: 2px dashed var(--border-soft);
+    border-radius: 10px;
+    background: #fafaf3;
+    cursor: pointer;
+    overflow: hidden;
+    transition: border-color 0.15s;
+  }
+  .img-slot.has-image { border-style: solid; }
+  .img-slot .preview {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .img-slot .placeholder {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: var(--text-faint);
+    font-size: 13px;
+    gap: 6px;
+    font-family: "Yuanti SC", "PingFang SC", sans-serif;
+  }
+  .img-slot .placeholder .icon { font-size: 32px; }
+  .img-slot .label {
+    position: absolute;
+    top: 6px; left: 6px;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .img-slot .remove-btn {
+    position: absolute;
+    top: 6px; right: 6px;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .img-slot input[type="file"] { display: none; }
+
+  .img-slot .swap-btn {
+    position: absolute;
+    bottom: 6px;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.9);
+    color: #5a4d3a;
+    border: none;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    z-index: 2;
+  }
+  .img-slot .swap-left { left: 6px; }
+  .img-slot .swap-right { right: 40px; }
+  .img-slot .swap-btn:active { transform: scale(0.9); }
+
+  /* Text inputs */
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    font-weight: 600;
+    font-family: "Yuanti SC", "PingFang SC", sans-serif;
+  }
+  .field input[type="text"] {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--border-soft);
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: inherit;
+    background: #fafaf3;
+    -webkit-appearance: none;
+  }
+  .field input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: #fff;
+  }
+  .field .hint {
+    font-size: 11px;
+    color: var(--text-faint);
+    margin-top: 4px;
+    font-family: "Yuanti SC", "PingFang SC", sans-serif;
+  }
+
+  /* Sticker picker */
+  .sticker-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+  }
+  .sticker-btn {
+    aspect-ratio: 1;
+    border: 1.5px solid var(--border-soft);
+    border-radius: 8px;
+    background: #fafaf3;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: all 0.15s;
+  }
+  .sticker-btn.active { background: #fff5ed; border-color: var(--accent); }
+
+  /* Bottom actions */
+  .bottom-actions {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-width: 720px;
+    margin: 0 auto;
+    background: rgba(253, 251, 246, 0.98);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border-soft);
+    display: flex;
+    gap: 10px;
+    z-index: 90;
+  }
+  .bottom-actions button {
+    flex: 1;
+    padding: 13px;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    flex: 2 !important;
+  }
+  .btn-secondary {
+    background: #fafaf3;
+    color: var(--text-main);
+    border: 1.5px solid var(--border-soft) !important;
+    flex: 1 !important;
+  }
+
+  /* ============================================
+     Export modal (mobile-friendly)
+     ============================================ */
+  .modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 1000;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal.show { display: flex; }
+  .modal-content {
+    width: 100%;
+    max-width: 360px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    flex: 0 1 auto;
+    min-height: 0;
+  }
+  .modal-content img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .modal-hint {
+    color: #fff;
+    text-align: center;
+    padding: 16px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: "Yuanti SC", "PingFang SC", sans-serif;
+  }
+  .modal-close {
+    margin-top: 12px;
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+    border: 1.5px solid rgba(255,255,255,0.4);
+    padding: 10px 30px;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  /* ============================================
+     Image Preview Modal
+     ============================================ */
+  .img-preview-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 1100;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .img-preview-modal.show { display: flex; }
+  .img-preview-modal .preview-title {
+    color: rgba(255,255,255,0.7);
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    font-family: "Yuanti SC", "PingFang SC", sans-serif;
+  }
+  .img-preview-modal .preview-img-wrap {
+    width: 100%;
+    max-width: 340px;
+    max-height: 55vh;
+    overflow: hidden;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .img-preview-modal .preview-img-wrap img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 55vh;
+    object-fit: contain;
+  }
+  .img-preview-modal .preview-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    width: 100%;
+    max-width: 340px;
+  }
+  .img-preview-modal .preview-actions button {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .img-preview-modal .btn-confirm {
+    background: var(--accent);
+    color: #fff;
+    flex: 2;
+  }
+  .img-preview-modal .btn-confirm:active { transform: scale(0.97); }
+  .img-preview-modal .btn-rechoose {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    border: 1.5px solid rgba(255,255,255,0.3) !important;
+    flex: 1;
+  }
+  .img-preview-modal .btn-rechoose:active { transform: scale(0.97); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    top: 70px; left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background: #2a2622;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 24px;
+    font-size: 13px;
+    transition: transform 0.3s;
+    z-index: 2000;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    white-space: nowrap;
+    font-family: "Yuanti SC", "PingFang SC", sans-serif;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ============================================
+     THE COVER (1080×1440 design)
+     ============================================ */
+  .cover-inner {
+    position: absolute;
+    inset: 0;
+    transform-origin: top left;
+    width: 1080px;
+    height: 1440px;
+  }
+
+  .cover::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.4;
+    background-image:
+      radial-gradient(circle at 30% 20%, rgba(0,0,0,0.04) 0%, transparent 50%),
+      radial-gradient(circle at 70% 80%, rgba(0,0,0,0.03) 0%, transparent 50%);
+  }
+
+  .cover-stickers {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .cover-sticker { position: absolute; pointer-events: none; }
+
+  /* Polaroid — ���小白边，照片占比更大 */
+  .polaroid {
+    position: absolute;
+    background: #fff;
+    padding: 8px 8px 14px;
+    box-shadow: 0 6px 18px rgba(40, 30, 20, 0.18);
+    z-index: 2;
+    transform-origin: center center;
+  }
+  .polaroid .photo {
+    width: 100%;
+    aspect-ratio: var(--photo-ar, 1);
+    background: #f0ece3;
+    overflow: hidden;
+    position: relative;
+  }
+  .polaroid .photo img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .polaroid .photo .placeholder {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(120, 100, 80, 0.4);
+    font-size: 60px;
+  }
+
+  .tape {
+    position: absolute;
+    width: 140px;
+    height: 32px;
+    z-index: 4;
+    opacity: 0.85;
+    transform-origin: center;
+  }
+  .tape.tape-1 { background: linear-gradient(90deg, #f0c8b8 0%, #f8d8c8 50%, #f0c8b8 100%); }
+  .tape.tape-2 { background: linear-gradient(90deg, #b8d0c8 0%, #c8e0d8 50%, #b8d0c8 100%); }
+  .tape.tape-3 { background: linear-gradient(90deg, #e8d8b8 0%, #f0e0c0 50%, #e8d8b8 100%); }
+  .tape.tape-4 { background: linear-gradient(90deg, #d8c8e0 0%, #e0d0e8 50%, #d8c8e0 100%); }
+  .tape.tape-5 { background: linear-gradient(90deg, #f0d0a8 0%, #f8d8b8 50%, #f0d0a8 100%); }
+
+  .cover-text { position: absolute; z-index: 6; }
+
+  .cover-store-name {
+    font-family: "HanziPen SC", "Baoli SC", "STXingkai", "STKaiti", "KaiTi", "Yuanti SC", serif;
+    font-weight: 600;
+    font-size: 86px;
+    color: #2a2622;
+    line-height: 1.15;
+    letter-spacing: 2px;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.05);
+    word-break: break-word;
+    max-width: 920px;
+  }
+  .cover-highlight {
+    font-family: "Yuanti SC", "Wawati SC", "Baoli SC", "PingFang SC", sans-serif;
+    font-weight: 500;
+    font-size: 34px;
+    color: #6a5d4a;
+    line-height: 1.4;
+    max-width: 800px;
+  }
+  .cover-location {
+    font-family: "Yuanti SC", "PingFang SC", sans-serif;
+    font-size: 28px;
+    font-weight: 500;
+    color: #6a5d4a;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.7);
+    padding: 6px 16px;
+    border-radius: 999px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  .cover-signature {
+    font-family: "Yuanti SC", "Wawati SC", "PingFang SC", cursive;
+    font-weight: 500;
+    font-size: 26px;
+    color: #8a7a5a;
+    letter-spacing: 1px;
+  }
+
+  /* Layouts — 照片占比更大，边距更紧凑 */
+  .layout-a .polaroid.p1 { top: 90px; left: 50px; width: 530px; transform: rotate(-3deg); }
+  .layout-a .polaroid.p2 { top: 90px; right: 50px; width: 440px; transform: rotate(4deg); }
+  .layout-a .polaroid.p3 { bottom: 440px; left: 80px; width: 440px; transform: rotate(2deg); }
+  .layout-a .polaroid.p4 { bottom: 440px; right: 70px; width: 440px; transform: rotate(-4deg); }
+  .layout-a .tape.t1 { top: 75px; left: 240px; transform: rotate(-20deg); }
+  .layout-a .tape.t2 { top: 75px; right: 200px; transform: rotate(25deg); }
+  .layout-a .tape.t3 { top: 530px; left: 260px; transform: rotate(15deg); }
+  .layout-a .tape.t4 { top: 530px; right: 240px; transform: rotate(-30deg); }
+
+  .layout-b .polaroid.p1 { top: 80px; left: 40px; width: 650px; transform: rotate(-2deg); }
+  .layout-b .polaroid.p2 { top: 100px; right: 50px; width: 370px; transform: rotate(5deg); }
+  .layout-b .polaroid.p3 { bottom: 420px; right: 100px; width: 330px; transform: rotate(-6deg); }
+  .layout-b .tape.t1 { top: 60px; left: 240px; transform: rotate(-15deg); }
+  .layout-b .tape.t2 { top: 80px; right: 200px; transform: rotate(20deg); }
+  .layout-b .tape.t3 { bottom: 680px; right: 100px; transform: rotate(-25deg); }
+
+  .layout-c .polaroid.p1 { top: 70px; left: 110px; width: 530px; transform: rotate(-3deg); }
+  .layout-c .polaroid.p2 { top: 530px; left: 60px; width: 440px; transform: rotate(4deg); }
+  .layout-c .polaroid.p3 { top: 530px; right: 60px; width: 420px; transform: rotate(-5deg); }
+  .layout-c .tape.t1 { top: 50px; left: 280px; transform: rotate(-10deg); }
+  .layout-c .tape.t2 { top: 510px; left: 220px; transform: rotate(20deg); }
+  .layout-c .tape.t3 { top: 510px; right: 240px; transform: rotate(-25deg); }
+
+  .layout-d .polaroid.p1 { top: 80px; left: 150px; width: 780px; transform: rotate(-1.5deg); }
+  .layout-d .polaroid.p2 { top: 670px; right: 80px; width: 320px; transform: rotate(8deg); }
+  .layout-d .tape.t1 { top: 60px; left: 420px; transform: rotate(-8deg); }
+  .layout-d .tape.t2 { top: 650px; right: 200px; transform: rotate(30deg); }
+
+  .layout-e .polaroid.p1 { top: 80px; left: 40px; width: 700px; transform: rotate(-2deg); }
+  .layout-e .polaroid.p2 { top: 100px; right: 40px; width: 350px; transform: rotate(5deg); }
+  .layout-e .polaroid.p3 { bottom: 420px; left: 60px; width: 350px; transform: rotate(-3deg); }
+  .layout-e .polaroid.p4 { bottom: 420px; right: 60px; width: 350px; transform: rotate(4deg); }
+  .layout-e .tape.t1 { top: 60px; left: 240px; transform: rotate(-12deg); }
+  .layout-e .tape.t2 { top: 60px; right: 200px; transform: rotate(18deg); }
+  .layout-e .tape.t3 { bottom: 680px; left: 260px; transform: rotate(-20deg); }
+  .layout-e .tape.t4 { bottom: 680px; right: 240px; transform: rotate(25deg); }
+
+  .layout-f .polaroid.p1 { top: 60px; left: 80px; width: 480px; transform: rotate(-2.5deg); }
+  .layout-f .polaroid.p2 { top: 140px; right: 50px; width: 400px; transform: rotate(6deg); }
+  .layout-f .polaroid.p3 { bottom: 400px; left: 50px; width: 420px; transform: rotate(-5deg); }
+  .layout-f .polaroid.p4 { bottom: 360px; right: 80px; width: 380px; transform: rotate(3deg); }
+  .layout-f .tape.t1 { top: 40px; left: 280px; transform: rotate(-18deg); }
+  .layout-f .tape.t2 { top: 120px; right: 220px; transform: rotate(22deg); }
+  .layout-f .tape.t3 { bottom: 640px; left: 240px; transform: rotate(-25deg); }
+  .layout-f .tape.t4 { bottom: 620px; right: 240px; transform: rotate(15deg); }
+
+  .layout-g .polaroid.p1 { top: 80px; left: 80px; width: 440px; transform: rotate(-4deg); }
+  .layout-g .polaroid.p2 { top: 60px; right: 80px; width: 420px; transform: rotate(3deg); }
+  .layout-g .polaroid.p3 { bottom: 420px; left: 60px; width: 400px; transform: rotate(-5deg); }
+  .layout-g .polaroid.p4 { bottom: 420px; right: 80px; width: 400px; transform: rotate(2deg); }
+  .layout-g .tape.t1 { top: 60px; left: 260px; transform: rotate(-15deg); }
+  .layout-g .tape.t2 { top: 40px; right: 240px; transform: rotate(20deg); }
+  .layout-g .tape.t3 { bottom: 680px; left: 220px; transform: rotate(20deg); }
+  .layout-g .tape.t4 { bottom: 680px; right: 240px; transform: rotate(-15deg); }
+
+  /* Layout H: 大画幅 — 1 张超大 4:3 图 */
+  .layout-h .polaroid.p1 { top: 30px; left: 40px; width: 1000px; transform: rotate(-0.5deg); }
+  .layout-h .tape.t1 { top: 15px; left: 120px; transform: rotate(-8deg); }
+  .layout-h .tape.t2 { top: 15px; right: 140px; transform: rotate(10deg); }
+  .layout-h .tape.t3, .layout-h .tape.t4 { display: none; }
+  .layout-h .cover-store-name { font-size: 66px; bottom: 170px; }
+  .layout-h .cover-highlight { font-size: 26px; bottom: 110px; }
+  .layout-h .cover-location { bottom: 40px; left: 80px; }
+  .layout-h .cover-signature { bottom: 40px; right: 80px; }
+
+  /* Layout I: 双竖幅 — 2 张 4:3 竖图并列 */
+  .layout-i .polaroid.p1 { top: 40px; left: 40px; width: 500px; transform: rotate(-2deg); }
+  .layout-i .polaroid.p2 { top: 40px; right: 40px; width: 500px; transform: rotate(2deg); }
+  .layout-i .tape.t1 { top: 20px; left: 220px; transform: rotate(-12deg); }
+  .layout-i .tape.t2 { top: 20px; right: 220px; transform: rotate(12deg); }
+  .layout-i .tape.t3, .layout-i .tape.t4 { display: none; }
+  .layout-i .cover-store-name { bottom: 240px; }
+  .layout-i .cover-highlight { bottom: 180px; }
+  .layout-i .cover-location { bottom: 90px; }
+  .layout-i .cover-signature { bottom: 40px; }
+
+  /* Themes */
+  .cover.theme-cream { background: #f5ede0; }
+  .cover.theme-kraft { background: #d4b896; }
+  .cover.theme-white { background: #fbfaf6; }
+  .cover.theme-pink { background: #fae6e0; }
+  .cover.theme-mint { background: #e0ede0; }
+  .cover.theme-gray { background: #d8d4cc; }
+
+  /* Desktop - side by side */
+  @media (min-width: 768px) {
+    .app { max-width: 1200px; flex-direction: row; }
+    .header { position: static; display: none; }
+    .stage {
+      position: sticky;
+      top: 0;
+      flex: 1;
+      max-width: 500px;
+      padding: 40px;
+      min-height: 100vh;
+      align-items: flex-start;
+      order: 2;
+    }
+    .cover { max-width: 450px; }
+    .controls {
+      flex: 1;
+      max-width: 480px;
+      overflow-y: auto;
+      max-height: 100vh;
+      padding-bottom: 40px;
+      order: 1;
+    }
+    .section { display: block; }
+    .section-header { cursor: default; }
+    .section-header .arrow { display: none; }
+    .section-body { max-height: none !important; padding-bottom: 16px; }
+    .bottom-actions { display: none; }
+    .desktop-export { display: block !important; }
+  }
+  .desktop-export {
+    display: none;
+    margin: 16px;
+    padding: 14px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    width: calc(100% - 32px);
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Sticky header (mobile) -->
+  <header class="header">
+    <h1>📒 探店日记封面</h1>
+    <button class="export-btn" id="headerExportBtn">导出</button>
+  </header>
+
+  <!-- Canvas preview -->
+  <main class="stage">
+    <div class="cover theme-cream layout-a" id="cover">
+      <div class="cover-inner" id="coverInner">
+        <div class="tape tape-1 t1"></div>
+        <div class="tape tape-2 t2"></div>
+        <div class="tape tape-3 t3"></div>
+        <div class="tape tape-4 t4"></div>
+        <div class="cover-stickers" id="coverStickers"></div>
+        <div class="cover-text cover-store-name" id="coverStoreName"></div>
+        <div class="cover-text cover-highlight" id="coverHighlight"></div>
+        <div class="cover-text cover-location" id="coverLocation">
+          <span>📍</span><span id="coverLocationText">深圳</span>
+        </div>
+        <div class="cover-text cover-signature" id="coverSignature">zz吃喝玩乐</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Controls -->
+  <div class="controls">
+
+    <!-- ① Paper theme -->
+    <div class="section open" data-section="theme">
+      <button class="section-header" type="button">
+        <span class="title"><span class="num">1</span>选纸张</span>
+        <span class="arrow">›</span>
+      </button>
+      <div class="section-body">
+        <div class="theme-grid" id="themeGrid">
+          <div class="theme-card active" data-theme="cream">
+            <div class="swatch" style="background: #f5ede0;"></div>米黄
+          </div>
+          <div class="theme-card" data-theme="kraft">
+            <div class="swatch" style="background: #d4b896;"></div>牛皮
+          </div>
+          <div class="theme-card" data-theme="white">
+            <div class="swatch" style="background: #fbfaf6;"></div>素白
+          </div>
+          <div class="theme-card" data-theme="pink">
+            <div class="swatch" style="background: #fae6e0;"></div>粉纸
+          </div>
+          <div class="theme-card" data-theme="mint">
+            <div class="swatch" style="background: #e0ede0;"></div>薄荷
+          </div>
+          <div class="theme-card" data-theme="gray">
+            <div class="swatch" style="background: #d8d4cc;"></div>灰纸
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ② Layout -->
+    <div class="section open" data-section="layout">
+      <button class="section-header" type="button">
+        <span class="title"><span class="num">2</span>选拼贴</span>
+        <span class="arrow">›</span>
+      </button>
+      <div class="section-body">
+        <div class="layout-grid" id="layoutGrid">
+          <div class="layout-card active" data-layout="a">
+            <svg class="layout-svg" viewBox="0 0 100 100">
+              <rect x="10" y="10" width="40" height="35" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(-3 30 27)"/>
+              <rect x="52" y="12" width="35" height="32" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(4 70 28)"/>
+              <rect x="14" y="55" width="35" height="32" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(2 30 70)"/>
+              <rect x="52" y="55" width="35" height="32" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(-4 70 70)"/>
+            </svg>
+          </div>
+          <div class="layout-card" data-layout="b">
+            <svg class="layout-svg" viewBox="0 0 100 100">
+              <rect x="8" y="10" width="55" height="50" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(-2 35 35)"/>
+              <rect x="65" y="12" width="28" height="28" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(5 78 26)"/>
+              <rect x="70" y="60" width="24" height="25" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(-6 82 72)"/>
+            </svg>
+          </div>
+          <div class="layout-card" data-layout="c">
+            <svg class="layout-svg" viewBox="0 0 100 100">
+              <rect x="20" y="8" width="60" height="42" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(-3 50 29)"/>
+              <rect x="10" y="55" width="40" height="35" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(4 30 72)"/>
+              <rect x="55" y="55" width="38" height="35" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(-5 74 72)"/>
+            </svg>
+          </div>
+          <div class="layout-card" data-layout="d">
+            <svg class="layout-svg" viewBox="0 0 100 100">
+              <rect x="15" y="10" width="70" height="50" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(-1.5 50 35)"/>
+              <rect x="65" y="62" width="28" height="28" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(8 79 76)"/>
+            </svg>
+          </div>
+          <div class="layout-card" data-layout="e">
+            <svg class="layout-svg" viewBox="0 0 100 100">
+              <rect x="6" y="6" width="55" height="40" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(-2 33 26)"/>
+              <rect x="68" y="6" width="28" height="26" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(5 82 19)"/>
+              <rect x="8" y="52" width="28" height="26" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(-3 22 65)"/>
+              <rect x="65" y="52" width="28" height="26" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(4 79 65)"/>
+            </svg>
+          </div>
+          <div class="layout-card" data-layout="f">
+            <svg class="layout-svg" viewBox="0 0 100 100">
+              <rect x="8" y="6" width="38" height="38" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(-2.5 27 25)"/>
+              <rect x="60" y="14" width="32" height="30" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(6 76 29)"/>
+              <rect x="12" y="52" width="32" height="30" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(-5 28 67)"/>
+              <rect x="58" y="54" width="30" height="28" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(3 73 68)"/>
+            </svg>
+          </div>
+          <div class="layout-card" data-layout="g">
+            <svg class="layout-svg" viewBox="0 0 100 100">
+              <rect x="8" y="8" width="35" height="32" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(-4 25 24)"/>
+              <rect x="57" y="6" width="34" height="30" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(3 74 21)"/>
+              <rect x="6" y="56" width="32" height="28" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(-5 22 70)"/>
+              <rect x="58" y="56" width="32" height="28" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(2 74 70)"/>
+            </svg>
+          </div>
+          <div class="layout-card" data-layout="h">
+            <svg class="layout-svg" viewBox="0 0 100 100">
+              <rect x="2" y="2" width="96" height="100" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(-0.5 50 50)" rx="2"/>
+            </svg>
+          </div>
+          <div class="layout-card" data-layout="i">
+            <svg class="layout-svg" viewBox="0 0 100 100">
+              <rect x="3" y="2" width="44" height="76" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(-2 25 40)" rx="2"/>
+              <rect x="52" y="2" width="44" height="76" fill="#fff" stroke="#ccc" stroke-width="0.5" transform="rotate(2 74 40)" rx="2"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ③ Images -->
+    <div class="section open" data-section="images">
+      <button class="section-header" type="button">
+        <span class="title"><span class="num">3</span>上传图片</span>
+        <span class="arrow">›</span>
+      </button>
+      <div class="section-body">
+        <div class="img-grid" id="imgGrid"></div>
+      </div>
+    </div>
+
+    <!-- ④ Text -->
+    <div class="section open" data-section="text">
+      <button class="section-header" type="button">
+        <span class="title"><span class="num">4</span>写字</span>
+        <span class="arrow">›</span>
+      </button>
+      <div class="section-body">
+        <div class="field">
+          <label>店名</label>
+          <input type="text" id="storeName" placeholder="例：店名" value="">
+        </div>
+        <div class="field">
+          <label>一句话（可选）</label>
+          <input type="text" id="highlight" placeholder="例：一句话推荐" value="">
+        </div>
+        <div class="field">
+          <label>坐标</label>
+          <input type="text" id="location" placeholder="深圳" value="深圳">
+        </div>
+        <div class="field">
+          <label>签名（可选）</label>
+          <input type="text" id="signature" placeholder="@你的ID" value="zz吃喝玩乐">
+        </div>
+      </div>
+    </div>
+
+    <!-- ⑤ Stickers -->
+    <div class="section" data-section="stickers">
+      <button class="section-header" type="button">
+        <span class="title"><span class="num">5</span>小贴纸</span>
+        <span class="arrow">›</span>
+      </button>
+      <div class="section-body">
+        <div class="sticker-grid" id="stickerGrid">
+          <div class="sticker-btn" data-sticker="none">∅</div>
+          <div class="sticker-btn" data-sticker="hearts">♡♡</div>
+          <div class="sticker-btn" data-sticker="sparkles">✦✦</div>
+          <div class="sticker-btn" data-sticker="stars">★☆</div>
+          <div class="sticker-btn" data-sticker="dots">·····</div>
+          <div class="sticker-btn" data-sticker="arrows">➤</div>
+          <div class="sticker-btn active" data-sticker="mixed">✨</div>
+          <div class="sticker-btn" data-sticker="circles">○●</div>
+          <div class="sticker-btn" data-sticker="lines">―――</div>
+          <div class="sticker-btn" data-sticker="flowers">✿❀</div>
+          <div class="sticker-btn" data-sticker="check">✓</div>
+          <div class="sticker-btn" data-sticker="plus">+</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="desktop-export" id="desktopExportBtn">⬇ 导出封面 PNG</button>
+  </div>
+
+  <!-- Bottom actions (mobile) -->
+  <div class="bottom-actions">
+    <button class="btn-secondary" id="demoBtn">✨ 看示例</button>
+    <button class="btn-primary" id="exportBtn">导出封面</button>
+  </div>
+</div>
+
+<!-- Export modal -->
+<div class="modal" id="exportModal">
+  <div class="modal-content">
+    <img id="modalImg" alt="封面预览">
+  </div>
+  <div class="modal-hint">长按图片保存到相册 📥</div>
+  <button class="modal-close" id="modalCloseBtn">关闭</button>
+</div>
+
+<!-- Image Preview Modal -->
+<div class="img-preview-modal" id="imgPreviewModal">
+  <div class="preview-title" id="previewTitle">预览第 1 张</div>
+  <div class="preview-img-wrap"><img id="previewImg" alt="预览图片"></div>
+  <div class="preview-actions">
+    <button class="btn-rechoose" id="previewRechooseBtn">🔄 换一张</button>
+    <button class="btn-confirm" id="previewConfirmBtn">✅ 使用这张</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">已保存</div>
+
+<script>
+  const state = {
+    theme: 'cream',
+    layout: 'a',
+    images: [null, null, null, null],
+    imgCount: 4,
+    stickerSet: 'mixed',
+    previewPending: null,    // { index, dataUrl } when previewing an image
+  };
+
+  const LAYOUT_IMG_COUNT = { a: 4, b: 3, c: 3, d: 2, e: 4, f: 4, g: 4, h: 1, i: 2 };
+  const LAYOUT_POLAROID_POSITIONS = {
+    a: [{ cls: 'p1', ar: '3/4' }, { cls: 'p2', ar: '1/1' }, { cls: 'p3', ar: '3/4' }, { cls: 'p4', ar: '1/1' }],
+    b: [{ cls: 'p1', ar: '3/4' }, { cls: 'p2', ar: '1/1' }, { cls: 'p3', ar: '3/4' }],
+    c: [{ cls: 'p1', ar: '3/4' }, { cls: 'p2', ar: '1/1' }, { cls: 'p3', ar: '3/4' }],
+    d: [{ cls: 'p1', ar: '3/4' }, { cls: 'p2', ar: '1/1' }],
+    e: [{ cls: 'p1', ar: '3/4' }, { cls: 'p2', ar: '3/4' }, { cls: 'p3', ar: '1/1' }, { cls: 'p4', ar: '1/1' }],
+    f: [{ cls: 'p1', ar: '3/4' }, { cls: 'p2', ar: '1/1' }, { cls: 'p3', ar: '3/4' }, { cls: 'p4', ar: '1/1' }],
+    g: [{ cls: 'p1', ar: '1/1' }, { cls: 'p2', ar: '1/1' }, { cls: 'p3', ar: '3/4' }, { cls: 'p4', ar: '3/4' }],
+    h: [{ cls: 'p1', ar: '3/4' }],
+    i: [{ cls: 'p1', ar: '3/4' }, { cls: 'p2', ar: '3/4' }],
+  };
+
+  /* ==== Sections collapse ==== */
+  document.querySelectorAll('.section-header').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (window.innerWidth >= 768) return; // desktop: always open
+      btn.closest('.section').classList.toggle('open');
+    });
+  });
+
+  /* ==== Theme ==== */
+  document.getElementById('themeGrid').addEventListener('click', (e) => {
+    const card = e.target.closest('.theme-card');
+    if (!card) return;
+    document.querySelectorAll('#themeGrid .theme-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    state.theme = card.dataset.theme;
+    const cover = document.getElementById('cover');
+    cover.className = cover.className.replace(/theme-\w+/, '').trim();
+    cover.classList.add('theme-' + state.theme);
+    renderStickers(); // refresh sticker color
+  });
+
+  /* ==== Layout ==== */
+  document.getElementById('layoutGrid').addEventListener('click', (e) => {
+    const card = e.target.closest('.layout-card');
+    if (!card) return;
+    document.querySelectorAll('#layoutGrid .layout-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    state.layout = card.dataset.layout;
+    const cover = document.getElementById('cover');
+    cover.className = cover.className.replace(/layout-\w+/, '').trim();
+    cover.classList.add('layout-' + state.layout);
+    state.imgCount = LAYOUT_IMG_COUNT[state.layout] || 4;
+    renderImageSlots();
+    renderPolaroids();
+    renderTextPositions();
+  });
+
+  /* ==== Stickers ==== */
+  document.getElementById('stickerGrid').addEventListener('click', (e) => {
+    const btn = e.target.closest('.sticker-btn');
+    if (!btn) return;
+    document.querySelectorAll('#stickerGrid .sticker-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.stickerSet = btn.dataset.sticker;
+    renderStickers();
+  });
+
+  function stickerColor(theme) {
+    const map = {
+      cream: '#d4836a', kraft: '#8a5d2a', white: '#c8a888',
+      pink: '#d06880', mint: '#5a8a6a', gray: '#6a5d4a',
+    };
+    return map[theme] || '#d4836a';
+  }
+
+  function renderStickers() {
+    const layer = document.getElementById('coverStickers');
+    layer.innerHTML = '';
+    if (state.stickerSet === 'none') return;
+
+    const positions = {
+      hearts: [
+        { top: 30, left: 60, rot: -15, content: '♡' },
+        { top: 100, right: 40, rot: 20, content: '♡' },
+        { top: 50, left: 480, rot: 10, content: '♥' },
+      ],
+      sparkles: [
+        { top: 30, right: 80, rot: 0, content: '✦' },
+        { top: 150, left: 30, rot: 0, content: '✧' },
+        { top: 80, left: 500, rot: 0, content: '✦' },
+        { top: 720, right: 50, rot: 0, content: '✧' },
+      ],
+      stars: [
+        { top: 40, left: 70, rot: 0, content: '★' },
+        { top: 60, right: 60, rot: 0, content: '☆' },
+        { top: 700, left: 50, rot: 0, content: '★' },
+      ],
+      dots: [
+        { top: 40, left: 30, rot: 0, content: '· · · ·' },
+        { top: 720, right: 40, rot: 0, content: '· · ·' },
+      ],
+      arrows: [
+        { top: 60, right: 100, rot: -20, content: '➤' },
+        { bottom: 480, left: 60, rot: 20, content: '➤' },
+      ],
+      mixed: [
+        { top: 50, left: 50, rot: -10, content: '✦' },
+        { top: 80, right: 80, rot: 15, content: '♡' },
+        { top: 720, left: 80, rot: 5, content: '✿' },
+        { top: 750, right: 100, rot: -10, content: '✧' },
+        { top: 30, left: 500, rot: 8, content: '♡' },
+      ],
+      circles: [
+        { top: 40, right: 120, rot: 0, content: '○' },
+        { top: 750, left: 60, rot: 0, content: '●' },
+      ],
+      lines: [
+        { top: 40, left: 60, rot: 0, content: '―――' },
+        { top: 760, right: 80, rot: 0, content: '――' },
+      ],
+      flowers: [
+        { top: 50, left: 60, rot: 0, content: '✿' },
+        { top: 100, right: 100, rot: 0, content: '❀' },
+        { top: 730, left: 50, rot: 0, content: '✿' },
+      ],
+      check: [
+        { top: 60, right: 80, rot: 0, content: '✓' },
+        { top: 760, left: 80, rot: 0, content: '✓' },
+      ],
+      plus: [
+        { top: 40, left: 80, rot: 0, content: '+' },
+        { top: 60, right: 100, rot: 0, content: '+' },
+        { top: 750, left: 50, rot: 0, content: '+' },
+        { top: 730, right: 80, rot: 0, content: '+' },
+      ],
+    };
+
+    const items = positions[state.stickerSet] || [];
+    items.forEach(s => {
+      const el = document.createElement('div');
+      el.className = 'cover-sticker';
+      Object.assign(el.style, {
+        top: s.top != null ? s.top + 'px' : 'auto',
+        bottom: s.bottom != null ? s.bottom + 'px' : 'auto',
+        left: s.left != null ? s.left + 'px' : 'auto',
+        right: s.right != null ? s.right + 'px' : 'auto',
+        transform: `rotate(${s.rot || 0}deg)`,
+        fontSize: '42px',
+        color: stickerColor(state.theme),
+        fontWeight: '700',
+        lineHeight: '1',
+      });
+      el.textContent = s.content;
+      layer.appendChild(el);
+    });
+  }
+
+  /* ==== Polaroids ==== */
+  function renderPolaroids() {
+    const inner = document.getElementById('coverInner');
+    inner.querySelectorAll('.polaroid').forEach(p => p.remove());
+    const positions = LAYOUT_POLAROID_POSITIONS[state.layout];
+    for (let i = 0; i < state.imgCount; i++) {
+      const pos = positions[i];
+      const polaroid = document.createElement('div');
+      polaroid.className = 'polaroid ' + pos.cls;
+      // Apply aspect ratio (default 3/4 portrait for most, 1/1 for some)
+      const ar = pos.ar || '3/4';
+      polaroid.style.setProperty('--photo-ar', ar);
+      const photoContent = state.images[i]
+        ? `<img src="${state.images[i]}" alt="">`
+        : `<div class="placeholder">📷</div>`;
+      polaroid.innerHTML = `<div class="photo">${photoContent}</div>`;
+      const firstTape = inner.querySelector('.tape');
+      inner.insertBefore(polaroid, firstTape);
+    }
+  }
+
+  /* ==== Text positions ==== */
+  function renderTextPositions() {
+    const storeName = document.getElementById('coverStoreName');
+    const highlight = document.getElementById('coverHighlight');
+    const location = document.getElementById('coverLocation');
+    const signature = document.getElementById('coverSignature');
+
+    const configs = {
+      a: {
+        coverStoreName: { bottom: 300, left: 60, right: 60 },
+        coverHighlight: { bottom: 220, left: 70, right: 60 },
+        coverLocation: { bottom: 110, left: 60 },
+        coverSignature: { bottom: 50, right: 60 },
+      },
+      b: {
+        coverStoreName: { bottom: 280, left: 70, right: 60 },
+        coverHighlight: { bottom: 200, left: 80, right: 60 },
+        coverLocation: { bottom: 100, left: 70 },
+        coverSignature: { bottom: 50, right: 60 },
+      },
+      c: {
+        coverStoreName: { bottom: 320, left: 70, right: 60 },
+        coverHighlight: { bottom: 240, left: 80, right: 60 },
+        coverLocation: { bottom: 120, left: 70 },
+        coverSignature: { bottom: 50, right: 60 },
+      },
+      d: {
+        coverStoreName: { bottom: 320, left: 70, right: 60 },
+        coverHighlight: { bottom: 230, left: 80, right: 60 },
+        coverLocation: { bottom: 110, left: 70 },
+        coverSignature: { bottom: 50, right: 60 },
+      },
+      e: {
+        coverStoreName: { bottom: 300, left: 70, right: 60 },
+        coverHighlight: { bottom: 220, left: 80, right: 60 },
+        coverLocation: { bottom: 110, left: 70 },
+        coverSignature: { bottom: 50, right: 60 },
+      },
+      f: {
+        coverStoreName: { bottom: 280, left: 70, right: 60 },
+        coverHighlight: { bottom: 200, left: 80, right: 60 },
+        coverLocation: { bottom: 100, left: 70 },
+        coverSignature: { bottom: 50, right: 60 },
+      },
+      g: {
+        coverStoreName: { bottom: 300, left: 70, right: 60 },
+        coverHighlight: { bottom: 220, left: 80, right: 60 },
+        coverLocation: { bottom: 110, left: 70 },
+        coverSignature: { bottom: 50, right: 60 },
+      },
+      h: {
+        coverStoreName: { bottom: 180, left: 100, right: 100 },
+        coverHighlight: { bottom: 120, left: 100, right: 100 },
+        coverLocation: { bottom: 50, left: 80 },
+        coverSignature: { bottom: 50, right: 80 },
+      },
+      i: {
+        coverStoreName: { bottom: 240, left: 70, right: 60 },
+        coverHighlight: { bottom: 180, left: 80, right: 60 },
+        coverLocation: { bottom: 90, left: 70 },
+        coverSignature: { bottom: 40, right: 60 },
+      },
+    };
+    const cfg = configs[state.layout];
+    [
+      { id: 'coverStoreName', el: storeName },
+      { id: 'coverHighlight', el: highlight },
+      { id: 'coverLocation', el: location },
+      { id: 'coverSignature', el: signature },
+    ].forEach(({ id, el }) => {
+      const c = cfg[id];
+      if (c) {
+        el.style.top = c.top != null ? c.top + 'px' : 'auto';
+        el.style.bottom = c.bottom != null ? c.bottom + 'px' : 'auto';
+        el.style.left = c.left != null ? c.left + 'px' : 'auto';
+        el.style.right = c.right != null ? c.right + 'px' : 'auto';
+      }
+    });
+  }
+
+  /* ==== Image upload ==== */
+  function renderImageSlots() {
+    const grid = document.getElementById('imgGrid');
+    grid.innerHTML = '';
+    for (let i = 0; i < state.imgCount; i++) {
+      const slot = document.createElement('label');
+      slot.className = 'img-slot' + (state.images[i] ? ' has-image' : '');
+      slot.setAttribute('for', 'imgFile_' + i);
+      slot.dataset.index = i;
+      const showSwapLeft = state.images[i] && i > 0;
+      const showSwapRight = state.images[i] && i < state.imgCount - 1;
+      slot.innerHTML = `
+        ${state.images[i]
+          ? `<img class="preview" src="${state.images[i]}" alt="">
+             <span class="label">${i + 1}</span>
+             <button class="swap-btn swap-left" type="button" data-index="${i}" data-dir="left">◀</button>
+             <button class="swap-btn swap-right" type="button" data-index="${i}" data-dir="right">▶</button>
+             <button class="remove-btn" type="button" data-index="${i}">×</button>`
+          : `<div class="placeholder">
+               <span class="icon">📷</span>
+               <span>第 ${i + 1} 张</span>
+             </div>`
+        }
+        <input type="file" id="imgFile_${i}" accept="image/*">
+      `;
+      grid.appendChild(slot);
+    }
+    for (let i = 0; i < state.imgCount; i++) {
+      document.getElementById('imgFile_' + i).addEventListener('change', (e) => handleImageUpload(i, e.target.files[0]));
+    }
+    grid.querySelectorAll('.remove-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const idx = parseInt(btn.dataset.index, 10);
+        state.images[idx] = null;
+        renderImageSlots();
+        renderPolaroids();
+      });
+    });
+    // Swap buttons
+    grid.querySelectorAll('.swap-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const idx = parseInt(btn.dataset.index, 10);
+        const dir = btn.dataset.dir;
+        const target = dir === 'left' ? idx - 1 : idx + 1;
+        if (target < 0 || target >= state.imgCount) return;
+        // Swap
+        const tmp = state.images[idx];
+        state.images[idx] = state.images[target];
+        state.images[target] = tmp;
+        renderImageSlots();
+        renderPolaroids();
+      });
+    });
+  }
+
+  function handleImageUpload(index, file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target.result;
+      // Show preview modal instead of immediately applying
+      showImagePreview(index, dataUrl);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  /* ==== Image Preview Modal ==== */
+  function showImagePreview(index, dataUrl) {
+    state.previewPending = { index, dataUrl };
+    const titles = ['主图', '第 2 张', '第 3 张', '第 4 张'];
+    document.getElementById('previewTitle').textContent = '预览 ' + titles[index] || '';
+    document.getElementById('previewImg').src = dataUrl;
+    document.getElementById('imgPreviewModal').classList.add('show');
+  }
+
+  document.getElementById('previewConfirmBtn').addEventListener('click', () => {
+    if (!state.previewPending) return;
+    const { index, dataUrl } = state.previewPending;
+    state.images[index] = dataUrl;
+    state.previewPending = null;
+    document.getElementById('imgPreviewModal').classList.remove('show');
+    renderImageSlots();
+    renderPolaroids();
+  });
+
+  document.getElementById('previewRechooseBtn').addEventListener('click', () => {
+    if (!state.previewPending) return;
+    const { index } = state.previewPending;
+    state.previewPending = null;
+    document.getElementById('imgPreviewModal').classList.remove('show');
+    // Reopen the file picker for the same slot
+    const input = document.getElementById('imgFile_' + index);
+    if (input) {
+      input.value = ''; // clear so change event fires even if same file
+      input.click();
+    }
+  });
+
+  // Also confirm on swipe/background click
+  document.getElementById('imgPreviewModal').addEventListener('click', (e) => {
+    if (e.target.id === 'imgPreviewModal') {
+      // Don't close on background click - user should explicitly confirm or retry
+    }
+  });
+
+  /* ==== Text binding ==== */
+  function bindText(id, targetId) {
+    const input = document.getElementById(id);
+    const target = document.getElementById(targetId);
+    input.addEventListener('input', () => { target.textContent = input.value; });
+  }
+  bindText('storeName', 'coverStoreName');
+  bindText('highlight', 'coverHighlight');
+  bindText('signature', 'coverSignature');
+  document.getElementById('location').addEventListener('input', (e) => {
+    document.getElementById('coverLocationText').textContent = e.target.value;
+  });
+
+  /* ==== Scale cover ==== */
+  function scaleCover() {
+    const cover = document.getElementById('cover');
+    const inner = document.getElementById('coverInner');
+    const w = cover.clientWidth;
+    const scale = w / 1080;
+    inner.style.transform = `scale(${scale})`;
+  }
+  window.addEventListener('load', scaleCover);
+  window.addEventListener('resize', scaleCover);
+
+  /* ==== Export (mobile modal) ==== */
+  async function doExport() {
+    const btns = [document.getElementById('exportBtn'), document.getElementById('headerExportBtn'), document.getElementById('desktopExportBtn')];
+    btns.forEach(b => { if (b) { b.disabled = true; b.textContent = '生成中...'; } });
+    showToast('生成中，请稍候...');
+
+    try {
+      const cover = document.getElementById('cover');
+
+      // ✨ 修复：不篡改 transform，直接用 scale 参数放大截屏
+      const dispW = cover.clientWidth;
+      const targetW = 1080;
+      const scaleRatio = targetW / dispW;
+
+      const canvas = await html2canvas(cover, {
+        scale: scaleRatio,
+        useCORS: false,
+        allowTaint: true,
+        backgroundColor: null,
+        logging: false,
+      });
+
+      const dataUrl = canvas.toDataURL('image/png', 0.95);
+
+      // Fix: ensure exact 1080×1440 (fix 1px rounding)
+      const finalCanvas = document.createElement('canvas');
+      finalCanvas.width = 1080;
+      finalCanvas.height = 1440;
+      finalCanvas.getContext('2d').drawImage(canvas, 0, 0, 1080, 1440);
+      const finalDataUrl = finalCanvas.toDataURL('image/png', 0.95);
+
+      // Show in modal (mobile-friendly)
+      document.getElementById('modalImg').src = finalDataUrl;
+      document.getElementById('exportModal').classList.add('show');
+
+      // Also offer download on desktop
+      if (window.innerWidth >= 768) {
+        const a = document.createElement('a');
+        const storeName = document.getElementById('storeName').value || 'cover';
+        a.href = finalDataUrl;
+        a.download = `${storeName}-封面.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('导出失败：' + err.message);
+    } finally {
+      btns.forEach(b => {
+        if (b) {
+          b.disabled = false;
+          if (b.id === 'exportBtn' || b.id === 'headerExportBtn') b.textContent = '导出封面';
+          else b.textContent = '⬇ 导出封面 PNG';
+        }
+      });
+    }
+  }
+  document.getElementById('exportBtn').addEventListener('click', doExport);
+  document.getElementById('headerExportBtn').addEventListener('click', doExport);
+  document.getElementById('desktopExportBtn').addEventListener('click', doExport);
+  document.getElementById('modalCloseBtn').addEventListener('click', () => {
+    document.getElementById('exportModal').classList.remove('show');
+  });
+  document.getElementById('exportModal').addEventListener('click', (e) => {
+    if (e.target.id === 'exportModal') {
+      document.getElementById('exportModal').classList.remove('show');
+    }
+  });
+
+  /* ==== Demo data ==== */
+  function makeDemoImg(emoji, palette) {
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'>
+      <defs>
+        <radialGradient id='g' cx='50%' cy='40%' r='70%'>
+          <stop offset='0%' stop-color='${palette[0]}'/>
+          <stop offset='100%' stop-color='${palette[1]}'/>
+        </radialGradient>
+        <filter id='blur'><feGaussianBlur stdDeviation='15'/></filter>
+      </defs>
+      <rect width='400' height='400' fill='url(#g)'/>
+      <circle cx='200' cy='200' r='90' fill='${palette[2]}' opacity='0.5' filter='url(#blur)'/>
+      <circle cx='150' cy='160' r='40' fill='${palette[3]}' opacity='0.4' filter='url(#blur)'/>
+      <circle cx='260' cy='240' r='35' fill='${palette[4]}' opacity='0.4' filter='url(#blur)'/>
+      <text x='200' y='220' font-size='110' text-anchor='middle' dominant-baseline='middle' opacity='0.9'>${emoji}</text>
+    </svg>`;
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+  }
+
+  const demoData = {
+    theme: 'cream',
+    layout: 'a',
+    stickerSet: 'mixed',
+    texts: {
+      storeName: '炭烧咖啡小馆',
+      highlight: '藏在巷子里的小惊喜',
+      location: '深圳',
+      signature: 'zz吃喝玩乐',
+    },
+    images: [
+      makeDemoImg('☕', ['#f7d9b8','#c87850','#e8a07a','#d4884f','#9c5430']),
+      makeDemoImg('🍰', ['#f5e0b8','#a87850','#e8b87a','#d4985f','#7c4420']),
+      makeDemoImg('🌅', ['#fcd9c8','#d06850','#f8b8a0','#e89078','#9c4030']),
+      makeDemoImg('📖', ['#f5ecd8','#8a7050','#e8d4a8','#c0a078','#604828']),
+    ],
+  };
+
+  document.getElementById('demoBtn').addEventListener('click', () => {
+    document.querySelectorAll('#themeGrid .theme-card').forEach(c => {
+      c.classList.toggle('active', c.dataset.theme === demoData.theme);
+    });
+    const cover = document.getElementById('cover');
+    cover.className = cover.className.replace(/theme-\w+/, '').trim();
+    cover.classList.add('theme-' + demoData.theme);
+    state.theme = demoData.theme;
+
+    document.querySelectorAll('#layoutGrid .layout-card').forEach(c => {
+      c.classList.toggle('active', c.dataset.layout === demoData.layout);
+    });
+    cover.className = cover.className.replace(/layout-\w+/, '').trim();
+    cover.classList.add('layout-' + demoData.layout);
+    state.layout = demoData.layout;
+    state.imgCount = LAYOUT_IMG_COUNT[state.layout] || 4;
+
+    document.querySelectorAll('#stickerGrid .sticker-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.sticker === demoData.stickerSet);
+    });
+    state.stickerSet = demoData.stickerSet;
+
+    state.images = demoData.images.slice(0, state.imgCount);
+    while (state.images.length < 4) state.images.push(null);
+
+    Object.entries(demoData.texts).forEach(([k, v]) => {
+      const inp = document.getElementById(k);
+      if (inp) {
+        inp.value = v;
+        inp.dispatchEvent(new Event('input'));
+      }
+    });
+
+    renderImageSlots();
+    renderPolaroids();
+    renderTextPositions();
+    renderStickers();
+    showToast('示例已加载 ✨');
+  });
+
+  /* ==== Toast ==== */
+  let toastTimer = null;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  /* ==== Init ==== */
+  renderImageSlots();
+  renderPolaroids();
+  renderTextPositions();
+  renderStickers();
+  document.querySelectorAll('.controls input').forEach(inp => inp.dispatchEvent(new Event('input')));
+</script>
+</body>
+</html>
